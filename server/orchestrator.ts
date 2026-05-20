@@ -34,6 +34,20 @@ export interface OrchestrationResponse {
 // Universal fetch adapter for OpenAI compatible APIs (OpenAI, Groq, DeepSeek, OpenRouter, Mistral, Local)
 export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<OrchestrationResponse> {
   const url = req.baseUrl || "https://api.openai.com/v1/chat/completions";
+
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      throw new Error("Invalid protocol");
+    }
+    const forbiddenHosts = ["169.254.169.254", "metadata.google.internal"];
+    if (forbiddenHosts.includes(parsedUrl.hostname)) {
+      throw new Error("Access to metadata service is forbidden");
+    }
+  } catch (err: any) {
+    throw new Error(`[${req.providerId}] API Error: Invalid base URL - ${err.message}`);
+  }
+
   const body: any = {
     model: req.model,
     messages: [],
