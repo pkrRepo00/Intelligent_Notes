@@ -14,6 +14,7 @@ interface CommandPaletteProps {
   onSwitchView: (view: 'notes' | 'graph' | 'canvas') => void;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  searchEngine: NoteSearchEngine;
 }
 
 export function CommandPalette({ 
@@ -22,7 +23,8 @@ export function CommandPalette({
   onNewNote, 
   onSwitchView, 
   isOpen, 
-  setIsOpen 
+  setIsOpen,
+  searchEngine
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
@@ -33,13 +35,6 @@ export function CommandPalette({
 
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsContainerRef = useRef<HTMLDivElement>(null);
-
-  // Initialize Search Engine
-  const searchEngine = useMemo(() => {
-    const engine = new NoteSearchEngine();
-    engine.indexDocuments(notes);
-    return engine;
-  }, [notes]);
 
   // Load search history & suggestions on query change
   useEffect(() => {

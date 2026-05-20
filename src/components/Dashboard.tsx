@@ -641,14 +641,14 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
   };
 
   // Derive categories for filter
-  const allCategories = Array.from(
+  const allCategories = useMemo(() => Array.from(
     new Set(notes.flatMap((n) => n.categories || []))
-  ).sort();
+  ).sort(), [notes]);
 
   // Derive folders for filter
-  const allFolders = Array.from(
+  const allFolders = useMemo(() => Array.from(
     new Set(notes.map((n) => n.folder).filter(Boolean))
-  ).sort();
+  ).sort(), [notes]);
 
   const dashboardSearchEngine = useMemo(() => {
     const engine = new NoteSearchEngine();
@@ -672,11 +672,11 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
     });
   }, [notes, searchQuery, selectedCategory, selectedFolder, dashboardSearchEngine]);
 
-  const sortedNotes = [...filteredNotes].sort((a, b) => {
+  const sortedNotes = useMemo(() => [...filteredNotes].sort((a, b) => {
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
     return b.createdAt - a.createdAt;
-  });
+  }), [filteredNotes]);
 
   return (
     <div 
@@ -1140,7 +1140,8 @@ export function Dashboard({ user, onLogout }: DashboardProps) {
         setIsOpen={setIsCommandPaletteOpen} 
         onOpenNote={setEditingNote} 
         onNewNote={() => setIsDrafting(true)} 
-        onSwitchView={setView} 
+        onSwitchView={setView}
+        searchEngine={dashboardSearchEngine}
       />
     </div>
   );
