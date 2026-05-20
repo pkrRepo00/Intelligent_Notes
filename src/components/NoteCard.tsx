@@ -41,7 +41,15 @@ export const NoteCard = React.memo(function NoteCard({
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
       onClick={onOpen}
-      className="bg-[#0a0a0a]/60 backdrop-blur-xl break-inside-avoid border border-white/5 rounded-3xl p-6 transition-all duration-300 group relative flex flex-col cursor-pointer hover:-translate-y-1 overflow-hidden shadow-xl hover:shadow-2xl hover:border-white/10"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      tabIndex={0}
+      role="button"
+      className="bg-[#0a0a0a]/60 backdrop-blur-xl break-inside-avoid border border-white/5 rounded-3xl p-6 transition-all duration-300 group relative flex flex-col cursor-pointer hover:-translate-y-1 overflow-hidden shadow-xl hover:shadow-2xl hover:border-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
       style={{
         boxShadow: note.color ? `0 8px 32px ${note.color}0f` : undefined,
       }}
@@ -60,11 +68,12 @@ export const NoteCard = React.memo(function NoteCard({
       <button
         onClick={(e) => { e.stopPropagation(); onTogglePin(note, e); }}
         className={cn(
-          "absolute top-4 right-4 p-2 rounded-full transition-all z-10",
+          "absolute top-4 right-4 p-2 rounded-full transition-all z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500",
           note.isPinned
             ? "text-amber-500 bg-amber-500/10"
-            : "text-white/20 hover:text-white/60 hover:bg-white/5 opacity-0 group-hover:opacity-100"
+            : "text-white/20 hover:text-white/60 hover:bg-white/5 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
         )}
+        aria-label={note.isPinned ? "Unpin note" : "Pin note"}
         title={note.isPinned ? "Unpin note" : "Pin note"}
       >
         <Pin className={cn("w-4 h-4", note.isPinned && "fill-amber-500")} />
@@ -156,16 +165,18 @@ export const NoteCard = React.memo(function NoteCard({
            {!note.isConfidential && (
              <button
                disabled={isEnhancing}
-               onClick={onEnhance}
-               className="text-white/20 hover:text-amber-400 p-1.5 hover:bg-amber-500/10 rounded-md transition-colors"
+               onClick={(e) => { e.stopPropagation(); onEnhance(e); }}
+               className="text-white/20 hover:text-amber-400 p-1.5 hover:bg-amber-500/10 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+               aria-label="Regenerate Insights"
                title="Regenerate Insights"
              >
                {isEnhancing ? <Loader2 className="w-4 h-4 animate-spin text-amber-500" /> : <Sparkles className="w-4 h-4" />}
              </button>
            )}
            <button
-            onClick={onDelete}
-            className="text-white/20 hover:text-rose-400 p-1.5 hover:bg-rose-500/10 rounded-md transition-colors"
+            onClick={(e) => { e.stopPropagation(); onDelete(e); }}
+            className="text-white/20 hover:text-rose-400 p-1.5 hover:bg-rose-500/10 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+            aria-label="Delete Note"
             title="Delete Note"
            >
              <Trash2 className="w-4 h-4" />
