@@ -1,0 +1,28 @@
+{
+  "entities": {
+    "Note": {
+      "title": "Note",
+      "description": "User note with AI generated categories.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "categories": { "type": "array", "items": { "type": "string" } },
+        "summary": { "type": "string" },
+        "isArchived": { "type": "boolean" },
+        "isPinned": { "type": "boolean" },
+        "color": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "number", "description": "Timestamp in milliseconds" },
+        "updatedAt": { "type": "number", "description": "Timestamp in milliseconds" }
+      },
+      "required": ["content", "ownerId", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "notes/{noteId}": {
+      "schema": "Note",
+      "description": "Stored notes."
+    }
+  }
+}

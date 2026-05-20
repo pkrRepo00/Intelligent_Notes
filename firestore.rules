@@ -1,0 +1,61 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidNote(data) {
+      return data.keys().hasAll(['content', 'ownerId', 'createdAt', 'updatedAt']) 
+          && data.ownerId == request.auth.uid
+          && data.content is string && data.content.size() <= 500000
+          && (('title' in data.keys()) == false || (data.title is string && data.title.size() <= 1000))
+          && (('summary' in data.keys()) == false || (data.summary is string && data.summary.size() <= 10000))
+          && (('categories' in data.keys()) == false || (data.categories is list && data.categories.size() <= 20))
+          && (('isArchived' in data.keys()) == false || data.isArchived is bool)
+          && (('isPinned' in data.keys()) == false || data.isPinned is bool)
+          && (('isConfidential' in data.keys()) == false || data.isConfidential is bool)
+          && (('color' in data.keys()) == false || (data.color is string && data.color.size() <= 20))
+          && (('folder' in data.keys()) == false || (data.folder is string && data.folder.size() <= 200))
+          && (('keywords' in data.keys()) == false || (data.keywords is list && data.keywords.size() <= 50))
+          // For create:
+          && (request.method != 'create' || (data.createdAt is int && data.updatedAt is int))
+          // For update:
+          && (request.method != 'update' || data.updatedAt is int);
+    }
+
+    match /notes/{noteId} {
+      allow read: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+      
+      allow create: if isSignedIn() 
+        && isValidId(noteId) 
+        && isValidNote(incoming())
+        && incoming().ownerId == request.auth.uid;
+
+      allow update: if isSignedIn() 
+        && isValidId(noteId)
+        && existing().ownerId == request.auth.uid
+        && incoming().ownerId == existing().ownerId
+        && isValidNote(incoming())
+        && incoming().createdAt == existing().createdAt;
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Intelligent Notes",
+  "description": "An intelligent note-taking application powered by Gemini and Firebase, featuring automatic categorization and organization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
