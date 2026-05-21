@@ -265,13 +265,21 @@ export function parseTakeoutJson(data: any, fileName: string): ParsedTakeoutEntr
   let validEntries = entries.filter(e => e.title && e.content?.trim().length > 0);
 
   // Validation 2: Deduplicate entries (Strict comparison based on Title + Content Hash)
-  const uniqueKeys = new Set<string>();
+  const uniqueTitles = new Map<string, Set<string>>();
   validEntries = validEntries.filter(entry => {
-    const identifier = `${entry.title.trim().toLowerCase()}|||${entry.content.trim().toLowerCase()}`;
-    if (uniqueKeys.has(identifier)) {
+    const titleKey = entry.title.trim().toLowerCase();
+
+    let contentSet = uniqueTitles.get(titleKey);
+    if (!contentSet) {
+      contentSet = new Set<string>();
+      uniqueTitles.set(titleKey, contentSet);
+    }
+
+    const contentKey = entry.content.trim().toLowerCase();
+    if (contentSet.has(contentKey)) {
       return false; // Remove duplicate
     }
-    uniqueKeys.add(identifier);
+    contentSet.add(contentKey);
     return true;
   });
 
