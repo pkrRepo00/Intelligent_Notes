@@ -1,0 +1,4 @@
+## 2024-05-20 - SSRF and Credential Leak in AI Provider Tests
+**Vulnerability:** The `/api/test-provider` and model fetching endpoints allowed users to supply an arbitrary `baseUrl` for external LLM testing, making them vulnerable to Server-Side Request Forgery (SSRF) pointing to internal IP space (like `169.254.169.254`). Additionally, the `test-provider` endpoint leaked the server's `GEMINI_API_KEY` to the specified base URL if the user passed `apiKey: 'dummy'` alongside an attacker-controlled URL.
+**Learning:** Configurable backend endpoints that reach out to user-provided URLs require both robust URL parsing/validation and careful credential handling to prevent leaking server secrets via SSRF.
+**Prevention:** Implemented an `isSafeUrl` check to explicitly block access to known metadata IPs and non-HTTP protocols. Updated credential fallback logic to only inject the server's `GEMINI_API_KEY` when specifically interacting with the native `'gemini'` provider.

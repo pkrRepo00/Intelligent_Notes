@@ -31,8 +31,25 @@ export interface OrchestrationResponse {
   provider: string;
 }
 
+function isSafeUrl(urlString?: string): boolean {
+  if (!urlString) return true;
+  try {
+    const url = new URL(urlString);
+    const host = url.hostname;
+    // Prevent SSRF to AWS/GCP metadata endpoints and non-HTTP protocols
+    if (host === '169.254.169.254' || host === '0.0.0.0' || host.startsWith('169.254.')) return false;
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
 // Universal fetch adapter for OpenAI compatible APIs (OpenAI, Groq, DeepSeek, OpenRouter, Mistral, Local)
 export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<OrchestrationResponse> {
+  if (!isSafeUrl(req.baseUrl)) {
+    throw new Error("Invalid or unsafe baseUrl provided");
+  }
   const url = req.baseUrl || "https://api.openai.com/v1/chat/completions";
   const body: any = {
     model: req.model,

@@ -23,11 +23,11 @@ async function startServer() {
   app.post("/api/test-provider", async (req, res) => {
     const { providerId, model, apiKey, baseUrl } = req.body;
     try {
-      const { executeUniversalRequest } = require("./server/orchestrator");
+      const { executeUniversalRequest } = await import("./server/orchestrator");
       const resp = await executeUniversalRequest({
         providerId,
         model,
-        apiKey: apiKey === 'dummy' ? (process.env.GEMINI_API_KEY || '') : apiKey,
+        apiKey: apiKey === 'dummy' ? (providerId === 'gemini' ? (process.env.GEMINI_API_KEY || '') : 'dummy') : apiKey,
         baseUrl,
         prompt: "Respond with the word 'PONG'. No other text."
       });
