@@ -10,8 +10,25 @@ export interface NormalizedModel {
   quantization?: string;
 }
 
+function isSafeUrl(urlString?: string): boolean {
+  if (!urlString) return true;
+  try {
+    const url = new URL(urlString);
+    const host = url.hostname;
+    if (host === '169.254.169.254' || host === '0.0.0.0' || host.startsWith('169.254.')) return false;
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
 export async function fetchProviderModels(providerId: string, baseUrl?: string, apiKey?: string): Promise<NormalizedModel[]> {
   try {
+    if (!isSafeUrl(baseUrl)) {
+      throw new Error("Invalid or unsafe baseUrl provided");
+    }
+
     if (providerId === 'gemini') {
       const key = apiKey || process.env.GEMINI_API_KEY || "";
       const url = `https://generativelanguage.googleapis.com/v1beta/models?key=\${key}`;
