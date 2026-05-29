@@ -24,10 +24,19 @@ async function startServer() {
     const { providerId, model, apiKey, baseUrl } = req.body;
     try {
       const { executeUniversalRequest } = require("./server/orchestrator");
+      let isSafeBaseUrl = true;
+      if (baseUrl) {
+        try {
+          const urlObj = new URL(baseUrl);
+          isSafeBaseUrl = urlObj.hostname === 'generativelanguage.googleapis.com' || urlObj.hostname.endsWith('.googleapis.com');
+        } catch {
+          isSafeBaseUrl = false;
+        }
+      }
       const resp = await executeUniversalRequest({
         providerId,
         model,
-        apiKey: apiKey === 'dummy' ? (process.env.GEMINI_API_KEY || '') : apiKey,
+        apiKey: apiKey === 'dummy' && providerId === 'gemini' && isSafeBaseUrl ? (process.env.GEMINI_API_KEY || '') : apiKey,
         baseUrl,
         prompt: "Respond with the word 'PONG'. No other text."
       });
