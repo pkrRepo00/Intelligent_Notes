@@ -457,14 +457,23 @@ export class AIEngine {
           systemPrompt = item.payload.contents[0]; 
         }
 
+        let isSafeBaseUrl = true;
+        if (item.providerOptions.baseUrl) {
+          try {
+            const urlObj = new URL(item.providerOptions.baseUrl);
+            isSafeBaseUrl = urlObj.hostname === 'generativelanguage.googleapis.com' || urlObj.hostname.endsWith('.googleapis.com');
+          } catch {
+            isSafeBaseUrl = false;
+          }
+        }
         const req = {
           providerId: item.providerOptions.providerId,
           model: activeModel,
-          apiKey: item.providerOptions.apiKey || process.env.GEMINI_API_KEY,
+          apiKey: item.providerOptions.apiKey || (item.providerOptions.providerId === 'gemini' && isSafeBaseUrl ? process.env.GEMINI_API_KEY : ''),
           baseUrl: item.providerOptions.baseUrl,
           systemPrompt: systemPrompt,
           prompt: item.prompt,
-          responseFormat: item.payload?.config?.responseMimeType === "application/json" ? "json" : "text"
+          responseFormat: (item.payload?.config?.responseMimeType === "application/json" ? "json" : "text") as "json" | "text"
         };
         const uRes = await executeUniversalRequest(req);
         responseText = uRes.text;
