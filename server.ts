@@ -27,7 +27,7 @@ async function startServer() {
       const resp = await executeUniversalRequest({
         providerId,
         model,
-        apiKey: apiKey === 'dummy' ? (process.env.GEMINI_API_KEY || '') : apiKey,
+        apiKey: apiKey,
         baseUrl,
         prompt: "Respond with the word 'PONG'. No other text."
       });
