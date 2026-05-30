@@ -22,6 +22,11 @@ interface CanvasViewProps {
   onOpenNote: (note: Note) => void;
 }
 
+interface CanvasNodeData {
+  color?: string;
+  [key: string]: unknown;
+}
+
 const nodeTypes = {
   noteNode: NoteNode as any,
 };
@@ -159,7 +164,7 @@ export function CanvasView({ notes, onOpenNote }: CanvasViewProps) {
            className="!bg-[#0c0c0c]/80 backdrop-blur-md !border !border-white/10 !rounded-xl overflow-hidden !m-4 shadow-xl"
            maskColor="rgba(0, 0, 0, 0.6)"
            nodeColor={(node) => {
-             const data = node.data as any;
+             const data = node.data as CanvasNodeData;
              return data?.color || 'rgba(255, 255, 255, 0.1)';
            }}
            nodeBorderRadius={4}
