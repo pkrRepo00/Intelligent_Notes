@@ -13,7 +13,7 @@ export interface NormalizedModel {
 export async function fetchProviderModels(providerId: string, baseUrl?: string, apiKey?: string): Promise<NormalizedModel[]> {
   try {
     if (providerId === 'gemini') {
-      const key = apiKey || process.env.GEMINI_API_KEY || "";
+      const key = apiKey === 'dummy' ? (process.env.GEMINI_API_KEY || "") : (apiKey || process.env.GEMINI_API_KEY || "");
       const url = `https://generativelanguage.googleapis.com/v1beta/models?key=\${key}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error("Gemini list models failed: " + res.status);
