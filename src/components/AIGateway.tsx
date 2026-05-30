@@ -57,7 +57,7 @@ export function AIGateway({ onClose }: { onClose: () => void }) {
       } else {
         alert('Failed to pull');
       }
-    } catch(e: any) { alert(e.message); }
+    } catch(e: unknown) { alert(e instanceof Error ? e.message : String(e)); }
     setIsPulling(false);
   };
 
@@ -109,8 +109,8 @@ export function AIGateway({ onClose }: { onClose: () => void }) {
       } else {
         alert(`Connection failed: \${res.error}`);
       }
-    } catch (err: any) {
-      alert(`Error testing connection: \${err.message}`);
+    } catch (err: unknown) {
+      alert(`Error testing connection: \${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setTestingId(null);
     }
@@ -140,8 +140,8 @@ export function AIGateway({ onClose }: { onClose: () => void }) {
       } else {
         alert(`Failed to fetch models: \${res.error}`);
       }
-    } catch (err: any) {
-      alert(`Error fetching models: \${err.message}`);
+    } catch (err: unknown) {
+      alert(`Error fetching models: \${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setFetchingModelsId(null);
     }
