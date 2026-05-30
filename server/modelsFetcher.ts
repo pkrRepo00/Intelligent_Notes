@@ -71,8 +71,9 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
       contextLength: m.context_length || m.top_provider?.context_length,
     }));
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(`Fetch Models Error (\${providerId}):`, err);
-    throw new Error(`Failed to fetch models for \${providerId}: \${err.message}`);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    throw new Error(`Failed to fetch models for ${providerId}: ${errorMessage}`);
   }
 }
