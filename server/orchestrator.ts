@@ -31,10 +31,23 @@ export interface OrchestrationResponse {
   provider: string;
 }
 
+interface OpenAIMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+interface OpenAIRequestBody {
+  model: string;
+  messages: OpenAIMessage[];
+  temperature: number;
+  max_tokens?: number;
+  response_format?: { type: "json_object" };
+}
+
 // Universal fetch adapter for OpenAI compatible APIs (OpenAI, Groq, DeepSeek, OpenRouter, Mistral, Local)
 export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<OrchestrationResponse> {
   const url = req.baseUrl || "https://api.openai.com/v1/chat/completions";
-  const body: any = {
+  const body: OpenAIRequestBody = {
     model: req.model,
     messages: [],
     temperature: req.temperature ?? 0.7,
@@ -50,7 +63,7 @@ export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<
   }
   body.messages.push({ role: "user", content: req.prompt });
 
-  const headers: any = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "Authorization": `Bearer ${req.apiKey}`
   };
@@ -87,10 +100,23 @@ export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<
   };
 }
 
+interface AnthropicMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+interface AnthropicRequestBody {
+  model: string;
+  max_tokens: number;
+  temperature: number;
+  messages: AnthropicMessage[];
+  system?: string;
+}
+
 // Anthropic Adapter
 export async function fetchAnthropic(req: OrchestrationRequest): Promise<OrchestrationResponse> {
   const url = "https://api.anthropic.com/v1/messages";
-  const body: any = {
+  const body: AnthropicRequestBody = {
     model: req.model,
     max_tokens: req.maxTokens || 4096,
     temperature: req.temperature ?? 0.7,
@@ -131,6 +157,11 @@ export async function fetchAnthropic(req: OrchestrationRequest): Promise<Orchest
   };
 }
 
+interface GeminiConfig {
+  temperature?: number;
+  responseMimeType?: "application/json" | "text/plain";
+}
+
 // Google Gemini Adapter
 export async function fetchGemini(req: OrchestrationRequest): Promise<OrchestrationResponse> {
   const aiInstance = new GoogleGenAI({
@@ -139,7 +170,7 @@ export async function fetchGemini(req: OrchestrationRequest): Promise<Orchestrat
   });
 
   const fullPrompt = req.systemPrompt ? `${req.systemPrompt}\n\n${req.prompt}` : req.prompt;
-  const config: any = {
+  const config: GeminiConfig = {
      temperature: req.temperature ?? 0.7,
   };
   if (req.responseFormat === "json") {
