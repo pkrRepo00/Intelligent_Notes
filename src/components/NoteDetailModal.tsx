@@ -326,9 +326,9 @@ export function NoteDetailModal({
                            const newTitle = titleStr.trim();
                            if (loadedTitle.current && newTitle && loadedTitle.current !== newTitle) {
                               const updates = getNotesToUpdateOnRename(notes, loadedTitle.current, newTitle);
-                              for (const u of updates) {
-                                await updateNoteData(u.note.id, { content: u.newContent });
-                              }
+                              await Promise.all(
+                                updates.map(u => updateNoteData(u.note.id, { content: u.newContent }))
+                              );
                               loadedTitle.current = newTitle;
                            }
                          }}
