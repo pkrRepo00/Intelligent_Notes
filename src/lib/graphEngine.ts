@@ -101,9 +101,12 @@ export const buildGraphIndex = (notes: Note[]): GraphIndex => {
   });
 
   // Populate node neighbors for visualization
+  const nodeMap = new Map<string, GraphNode>();
+  nodes.forEach(n => nodeMap.set(n.id, n));
+
   links.forEach(link => {
-    const a = nodes.find(n => n.id === link.source);
-    const b = nodes.find(n => n.id === link.target);
+    const a = nodeMap.get(link.source);
+    const b = nodeMap.get(link.target);
     if (a && b) {
       a.neighbors.push(b);
       b.neighbors.push(a);
