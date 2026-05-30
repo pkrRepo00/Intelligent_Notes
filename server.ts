@@ -23,11 +23,17 @@ async function startServer() {
   app.post("/api/test-provider", async (req, res) => {
     const { providerId, model, apiKey, baseUrl } = req.body;
     try {
-      const { executeUniversalRequest } = require("./server/orchestrator");
+      const { executeUniversalRequest } = await import("./server/orchestrator");
+      // 🛡️ Sentinel: Prevent Server-Side Request Forgery (SSRF) leaking the API key
+      // Do not fallback to process.env.GEMINI_API_KEY if a custom baseUrl is provided
+      let resolvedApiKey = apiKey;
+      if (apiKey === 'dummy') {
+         resolvedApiKey = baseUrl ? '' : (process.env.GEMINI_API_KEY || '');
+      }
       const resp = await executeUniversalRequest({
         providerId,
         model,
-        apiKey: apiKey === 'dummy' ? (process.env.GEMINI_API_KEY || '') : apiKey,
+        apiKey: resolvedApiKey,
         baseUrl,
         prompt: "Respond with the word 'PONG'. No other text."
       });

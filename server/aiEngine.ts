@@ -457,10 +457,16 @@ export class AIEngine {
           systemPrompt = item.payload.contents[0]; 
         }
 
+        // 🛡️ Sentinel: Prevent SSRF by not falling back to the server API key if baseUrl is set
+        let resolvedApiKey = item.providerOptions.apiKey;
+        if (!resolvedApiKey) {
+           resolvedApiKey = item.providerOptions.baseUrl ? '' : process.env.GEMINI_API_KEY;
+        }
+
         const req = {
           providerId: item.providerOptions.providerId,
           model: activeModel,
-          apiKey: item.providerOptions.apiKey || process.env.GEMINI_API_KEY,
+          apiKey: resolvedApiKey,
           baseUrl: item.providerOptions.baseUrl,
           systemPrompt: systemPrompt,
           prompt: item.prompt,
