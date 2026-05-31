@@ -64,11 +64,12 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
       userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
+      // Omit email to prevent PII leakage
     },
     operationType,
     path
   }
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  // Throw a generic error to avoid leaking internal info to the client
+  throw new Error(`An error occurred during the ${operationType} operation.`);
 }
