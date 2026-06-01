@@ -69,6 +69,8 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   }
+  // Log full error securely on the client console (or to a secure telemetry service)
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  // Throw a generic, safe error message to prevent leaking internal state or PII
+  throw new Error(`A database error occurred during ${operationType}.`);
 }

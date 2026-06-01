@@ -1,0 +1,4 @@
+## 2025-02-24 - Prevent PII Leak in Firestore Error Handling
+**Vulnerability:** The application was catching Firestore exceptions and then serializing and throwing them using `JSON.stringify(errInfo)`. This inadvertently bundled the user's `email` and `uid` into the thrown error object, which could leak to the UI layer and expose sensitive PII in browser consoles or bug tracking tools.
+**Learning:** Standardizing error payloads can inadvertently result in over-sharing if raw debug data is thrown to higher layers instead of just being logged. The intent to provide robust debugging information created a privacy risk.
+**Prevention:** Follow a "Log the details securely, throw a generic error externally" pattern. Always sanitize errors before they are propagated out of API boundaries or data access layers.
