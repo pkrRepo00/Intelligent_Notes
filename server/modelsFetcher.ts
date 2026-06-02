@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { validateSafeUrl } from "./orchestrator";
 
 export interface NormalizedModel {
   id: string;
@@ -28,6 +29,7 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
 
     if (providerId === 'ollama') {
       const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '').replace(/[\/]api[\/]tags.*/g, '') + "/api/tags";
+      if (!validateSafeUrl(ollamaUrl)) throw new Error("Invalid or unsafe baseUrl provided for Ollama.");
       const res = await fetch(ollamaUrl);
       if (!res.ok) throw new Error(`Ollama API Error: \${res.status}`);
       const data = await res.json();
@@ -54,6 +56,8 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
     if (openaiBase.endsWith('/chat/completions')) openaiBase = openaiBase.replace('/chat/completions', '');
     
     let path = "/models";
+
+    if (!validateSafeUrl(openaiBase + path)) throw new Error("Invalid or unsafe baseUrl provided.");
 
     const res = await fetch(openaiBase + path, {
       headers: {
