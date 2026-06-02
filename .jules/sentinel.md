@@ -1,0 +1,4 @@
+## 2026-06-02 - SSRF Prevention in AI Gateway
+**Vulnerability:** The AI gateway allowed users to specify a custom `baseUrl` for different models, which was then directly passed to `fetch()` in the backend. This opened up the possibility of Server-Side Request Forgery (SSRF), where attackers could potentially access cloud metadata services (e.g. `169.254.169.254`) or scan internal networks.
+**Learning:** This existed because the application needs to support local AI models (like Ollama on `127.0.0.1`), meaning `localhost` access is necessary, but there were no checks to restrict access to unsafe internal endpoints or protocols.
+**Prevention:** Always validate user-provided URLs using `URL` parsing to ensure the protocol is strictly HTTP/HTTPS and explicitly block access to known internal metadata services (e.g., `169.254.169.254`).

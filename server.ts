@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import mammoth from "mammoth";
 import { AIEngine, Priority } from "./server/aiEngine";
+import { validateSafeUrl } from "./server/orchestrator";
 
 async function startServer() {
   const app = express();
@@ -57,6 +58,11 @@ async function startServer() {
     try {
       const { modelName, baseUrl } = req.body;
       const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '') + "/api/pull";
+
+      if (!validateSafeUrl(ollamaUrl)) {
+        return res.status(400).json({ error: "Invalid or unsafe baseUrl provided" });
+      }
+
       const resp = await fetch(ollamaUrl, {
         method: 'POST',
         headers: { "Content-Type": "application/json" },
