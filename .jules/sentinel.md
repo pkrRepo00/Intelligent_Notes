@@ -1,0 +1,4 @@
+## 2024-06-03 - Prevent SSRF via custom model URLs
+**Vulnerability:** The AI orchestrator and model fetcher logic blindly used `baseUrl` from user input without validation. This allowed Server-Side Request Forgery (SSRF) vulnerabilities where an attacker could provide URLs pointing to local services (e.g. `http://localhost:6379`) or cloud metadata endpoints (e.g. `http://169.254.169.254/latest/meta-data/`).
+**Learning:** In AI gateways or orchestrators where users can define custom providers, allowing freeform URLs introduces significant SSRF risks, especially in cloud environments where metadata endpoints often do not require authentication.
+**Prevention:** Implement strict URL validation for all custom base URLs before passing them to fetch operations. Validate the protocol (HTTP/HTTPS only), block known cloud metadata endpoints, and restrict loopback addresses to only allow known safe ports (e.g., Ollama's 11434) to avoid internal network scanning.
