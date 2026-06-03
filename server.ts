@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import mammoth from "mammoth";
 import { AIEngine, Priority } from "./server/aiEngine";
+import { validateSafeUrl } from "./server/security";
 
 async function startServer() {
   const app = express();
@@ -28,7 +29,7 @@ async function startServer() {
         providerId,
         model,
         apiKey: apiKey === 'dummy' ? (process.env.GEMINI_API_KEY || '') : apiKey,
-        baseUrl,
+        baseUrl: validateSafeUrl(baseUrl),
         prompt: "Respond with the word 'PONG'. No other text."
       });
       res.json(resp);
@@ -44,7 +45,7 @@ async function startServer() {
       const { providerId, baseUrl, apiKey } = req.body;
       if (!providerId) return res.status(400).json({ error: "providerId is required" });
       const { fetchProviderModels } = await import("./server/modelsFetcher");
-      const models = await fetchProviderModels(providerId, baseUrl, apiKey);
+      const models = await fetchProviderModels(providerId, validateSafeUrl(baseUrl), apiKey);
       res.json({ models });
     } catch (err: any) {
       console.error("/api/provider-models error:", err);
@@ -56,7 +57,7 @@ async function startServer() {
   app.post("/api/pull-model", async (req, res) => {
     try {
       const { modelName, baseUrl } = req.body;
-      const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '') + "/api/pull";
+      const ollamaUrl = (validateSafeUrl(baseUrl) || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '') + "/api/pull";
       const resp = await fetch(ollamaUrl, {
         method: 'POST',
         headers: { "Content-Type": "application/json" },
@@ -81,7 +82,7 @@ async function startServer() {
         providerId: req.headers['x-ai-provider'],
         model: req.headers['x-ai-model'],
         apiKey: req.headers['x-ai-apikey'],
-        baseUrl: req.headers['x-ai-baseurl']
+        baseUrl: validateSafeUrl(req.headers['x-ai-baseurl'] as string)
       } : undefined;
 
       const prompt = `Analyze the following note. Provide a concise title, a brief summary (max 2 sentences), an array of 1 to 4 highly relevant category tags (like 'Idea', 'Task', 'Personal', 'Work', 'Finance', 'Meeting', etc.), and a hex color code that fits the vibe.
@@ -149,7 +150,7 @@ ${content}
         providerId: req.headers['x-ai-provider'],
         model: req.headers['x-ai-model'],
         apiKey: req.headers['x-ai-apikey'],
-        baseUrl: req.headers['x-ai-baseurl']
+        baseUrl: validateSafeUrl(req.headers['x-ai-baseurl'] as string)
       } : undefined;
 
       const formattedNotesInput = notes.map((n, idx) => {
