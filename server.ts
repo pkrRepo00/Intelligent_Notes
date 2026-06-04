@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import mammoth from "mammoth";
 import { AIEngine, Priority } from "./server/aiEngine";
+import { validateSafeUrl } from "./server/security";
 
 async function startServer() {
   const app = express();
@@ -23,6 +24,7 @@ async function startServer() {
   app.post("/api/test-provider", async (req, res) => {
     const { providerId, model, apiKey, baseUrl } = req.body;
     try {
+      validateSafeUrl(baseUrl, providerId);
       const { executeUniversalRequest } = require("./server/orchestrator");
       const resp = await executeUniversalRequest({
         providerId,
@@ -42,6 +44,7 @@ async function startServer() {
   app.post("/api/provider-models", async (req, res) => {
     try {
       const { providerId, baseUrl, apiKey } = req.body;
+      validateSafeUrl(baseUrl, providerId);
       if (!providerId) return res.status(400).json({ error: "providerId is required" });
       const { fetchProviderModels } = await import("./server/modelsFetcher");
       const models = await fetchProviderModels(providerId, baseUrl, apiKey);
@@ -56,6 +59,7 @@ async function startServer() {
   app.post("/api/pull-model", async (req, res) => {
     try {
       const { modelName, baseUrl } = req.body;
+      validateSafeUrl(baseUrl, 'ollama'); // Ollama is a local provider
       const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '') + "/api/pull";
       const resp = await fetch(ollamaUrl, {
         method: 'POST',
