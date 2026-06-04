@@ -1,0 +1,4 @@
+## 2024-06-04 - SSRF Vulnerability in AI Gateway
+**Vulnerability:** Server-Side Request Forgery (SSRF) via `baseUrl` parameter in AI Gateway.
+**Learning:** The application acts as an AI proxy/gateway but blindly accepted arbitrary user-supplied URLs as the `baseUrl` for external LLM API requests. This could allow an attacker to probe the internal network, access cloud metadata services, or perform other malicious actions originating from the server.
+**Prevention:** Validate and restrict custom URLs before usage. Implement strict protocol validation (HTTP/HTTPS), block known sensitive hostnames/IPs (like `169.254.169.254` or `metadata.google.internal`), and explicitly manage rules for loopback addresses depending on whether the service naturally requires them (like a local Ollama instance) or not.
