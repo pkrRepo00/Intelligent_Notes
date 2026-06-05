@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { validateUrl } from "./security.js";
 
 export interface NormalizedModel {
   id: string;
@@ -27,7 +28,8 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
     }
 
     if (providerId === 'ollama') {
-      const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '').replace(/[\/]api[\/]tags.*/g, '') + "/api/tags";
+      const validatedBaseUrl = validateUrl(baseUrl);
+      const ollamaUrl = (validatedBaseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '').replace(/[\/]api[\/]tags.*/g, '') + "/api/tags";
       const res = await fetch(ollamaUrl);
       if (!res.ok) throw new Error(`Ollama API Error: \${res.status}`);
       const data = await res.json();
@@ -50,7 +52,7 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
     }
 
     // OpenAI Compatible
-    let openaiBase = baseUrl || "https://api.openai.com/v1";
+    let openaiBase = validateUrl(baseUrl) || "https://api.openai.com/v1";
     if (openaiBase.endsWith('/chat/completions')) openaiBase = openaiBase.replace('/chat/completions', '');
     
     let path = "/models";
