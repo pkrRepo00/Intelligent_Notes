@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { validateUrl } from "./security.js";
 
 export interface AIProvider {
   id: string;
@@ -33,7 +34,7 @@ export interface OrchestrationResponse {
 
 // Universal fetch adapter for OpenAI compatible APIs (OpenAI, Groq, DeepSeek, OpenRouter, Mistral, Local)
 export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<OrchestrationResponse> {
-  const url = req.baseUrl || "https://api.openai.com/v1/chat/completions";
+  const url = validateUrl(req.baseUrl) || "https://api.openai.com/v1/chat/completions";
   const body: any = {
     model: req.model,
     messages: [],

@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import mammoth from "mammoth";
 import { AIEngine, Priority } from "./server/aiEngine";
+import { validateUrl } from "./server/security.js";
 
 async function startServer() {
   const app = express();
@@ -21,14 +22,15 @@ async function startServer() {
 
   // Test custom provider connection
   app.post("/api/test-provider", async (req, res) => {
-    const { providerId, model, apiKey, baseUrl } = req.body;
     try {
+      const { providerId, model, apiKey, baseUrl } = req.body;
+      const validatedBaseUrl = validateUrl(baseUrl);
       const { executeUniversalRequest } = require("./server/orchestrator");
       const resp = await executeUniversalRequest({
         providerId,
         model,
         apiKey: apiKey === 'dummy' ? (process.env.GEMINI_API_KEY || '') : apiKey,
-        baseUrl,
+        baseUrl: validatedBaseUrl,
         prompt: "Respond with the word 'PONG'. No other text."
       });
       res.json(resp);
@@ -42,9 +44,10 @@ async function startServer() {
   app.post("/api/provider-models", async (req, res) => {
     try {
       const { providerId, baseUrl, apiKey } = req.body;
+      const validatedBaseUrl = validateUrl(baseUrl);
       if (!providerId) return res.status(400).json({ error: "providerId is required" });
       const { fetchProviderModels } = await import("./server/modelsFetcher");
-      const models = await fetchProviderModels(providerId, baseUrl, apiKey);
+      const models = await fetchProviderModels(providerId, validatedBaseUrl, apiKey);
       res.json({ models });
     } catch (err: any) {
       console.error("/api/provider-models error:", err);
@@ -56,7 +59,8 @@ async function startServer() {
   app.post("/api/pull-model", async (req, res) => {
     try {
       const { modelName, baseUrl } = req.body;
-      const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '') + "/api/pull";
+      const validatedBaseUrl = validateUrl(baseUrl);
+      const ollamaUrl = (validatedBaseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '') + "/api/pull";
       const resp = await fetch(ollamaUrl, {
         method: 'POST',
         headers: { "Content-Type": "application/json" },
@@ -81,7 +85,7 @@ async function startServer() {
         providerId: req.headers['x-ai-provider'],
         model: req.headers['x-ai-model'],
         apiKey: req.headers['x-ai-apikey'],
-        baseUrl: req.headers['x-ai-baseurl']
+        baseUrl: validateUrl(req.headers['x-ai-baseurl'] as string | undefined)
       } : undefined;
 
       const prompt = `Analyze the following note. Provide a concise title, a brief summary (max 2 sentences), an array of 1 to 4 highly relevant category tags (like 'Idea', 'Task', 'Personal', 'Work', 'Finance', 'Meeting', etc.), and a hex color code that fits the vibe.
@@ -149,7 +153,7 @@ ${content}
         providerId: req.headers['x-ai-provider'],
         model: req.headers['x-ai-model'],
         apiKey: req.headers['x-ai-apikey'],
-        baseUrl: req.headers['x-ai-baseurl']
+        baseUrl: validateUrl(req.headers['x-ai-baseurl'] as string | undefined)
       } : undefined;
 
       const formattedNotesInput = notes.map((n, idx) => {

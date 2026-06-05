@@ -1,0 +1,4 @@
+## 2025-03-05 - Fix Server-Side Request Forgery (SSRF) in AI Gateway
+**Vulnerability:** The AI Gateway blindly passed a user-provided `baseUrl` directly to `fetch()` when connecting to LLM providers (e.g. in `server.ts`, `server/modelsFetcher.ts`, and `server/orchestrator.ts`).
+**Learning:** Because the backend allowed any URL, it was susceptible to SSRF attacks, which could allow malicious users to access internal metadata services (like `169.254.169.254` on AWS) to steal credentials, or pivot requests to internal ports (like Redis `127.0.0.1:6379`) running on the server.
+**Prevention:** To prevent SSRF in AI Gateway components, `baseUrl` should always be validated. Only `http` and `https` protocols should be permitted. Access to known internal metadata IPs (like `169.254.169.254` and `metadata.google.internal`) should be strictly blocked. Furthermore, local loopback IP access should be limited specifically to trusted provider ports, such as `11434` for Ollama.
