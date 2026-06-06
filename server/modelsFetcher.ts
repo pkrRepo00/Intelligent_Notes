@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { validateProviderUrl } from "./security.js";
 
 export interface NormalizedModel {
   id: string;
@@ -12,6 +13,8 @@ export interface NormalizedModel {
 
 export async function fetchProviderModels(providerId: string, baseUrl?: string, apiKey?: string): Promise<NormalizedModel[]> {
   try {
+    validateProviderUrl(baseUrl);
+
     if (providerId === 'gemini') {
       const key = apiKey || process.env.GEMINI_API_KEY || "";
       const url = `https://generativelanguage.googleapis.com/v1beta/models?key=\${key}`;
