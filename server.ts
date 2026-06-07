@@ -56,6 +56,10 @@ async function startServer() {
   app.post("/api/pull-model", async (req, res) => {
     try {
       const { modelName, baseUrl } = req.body;
+      if (baseUrl) {
+        const { validateSafeUrl } = await import("./server/security");
+        await validateSafeUrl(baseUrl);
+      }
       const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '') + "/api/pull";
       const resp = await fetch(ollamaUrl, {
         method: 'POST',
