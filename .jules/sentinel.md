@@ -1,0 +1,4 @@
+## 2024-06-07 - SSRF Vulnerability via Custom Provider URLs
+**Vulnerability:** The AI Gateway permitted users to supply custom `baseUrl` parameters (via HTTP headers and API endpoints) for fetching AI models or interacting with APIs (like Ollama). This allowed arbitrary unauthenticated fetch requests to internal endpoints, including loopback addresses (127.0.0.1) and cloud metadata endpoints (169.254.169.254).
+**Learning:** By allowing dynamic base URLs without validation, the application was susceptible to Server-Side Request Forgery (SSRF) which could leak sensitive metadata or exploit internal services running on the same machine.
+**Prevention:** Always strictly validate user-supplied URLs using a combination of protocol checking, DNS resolution to detect internal IP ranges, and explicit blocklists/allowlists before making server-side fetch requests.
