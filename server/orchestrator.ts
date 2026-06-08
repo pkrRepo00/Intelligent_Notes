@@ -31,9 +31,44 @@ export interface OrchestrationResponse {
   provider: string;
 }
 
+// Security validation to prevent Server-Side Request Forgery (SSRF)
+function validateBaseUrl(urlStr: string): void {
+  let urlObj: URL;
+  try {
+    urlObj = new URL(urlStr);
+  } catch (err) {
+    throw new Error("Invalid URL format");
+  }
+
+  // Only allow HTTP and HTTPS protocols
+  if (urlObj.protocol !== "http:" && urlObj.protocol !== "https:") {
+    throw new Error("Invalid protocol. Only HTTP and HTTPS are allowed.");
+  }
+
+  const hostname = urlObj.hostname;
+
+  // Block localhost and IPv4 loopback (127.0.0.0/8)
+  if (hostname === "localhost" || /^127\.\d+\.\d+\.\d+$/.test(hostname)) {
+    throw new Error("Local loopback addresses are not allowed.");
+  }
+
+  // Block IPv6 loopback
+  if (hostname === "::1" || hostname === "[::1]") {
+    throw new Error("Local loopback addresses are not allowed.");
+  }
+
+  // Block Cloud metadata endpoints (169.254.169.254)
+  if (/^169\.254\.\d+\.\d+$/.test(hostname)) {
+    throw new Error("Metadata endpoints are not allowed.");
+  }
+}
+
 // Universal fetch adapter for OpenAI compatible APIs (OpenAI, Groq, DeepSeek, OpenRouter, Mistral, Local)
 export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<OrchestrationResponse> {
   const url = req.baseUrl || "https://api.openai.com/v1/chat/completions";
+  if (req.baseUrl) {
+    validateBaseUrl(url);
+  }
   const body: any = {
     model: req.model,
     messages: [],
@@ -163,6 +198,9 @@ export async function fetchGemini(req: OrchestrationRequest): Promise<Orchestrat
     provider: "gemini"
   };
 }
+
+// Export validation function for testing
+export { validateBaseUrl };
 
 export async function executeUniversalRequest(req: OrchestrationRequest): Promise<OrchestrationResponse> {
   switch (req.providerId) {
