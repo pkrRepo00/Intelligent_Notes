@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import mammoth from "mammoth";
 import { AIEngine, Priority } from "./server/aiEngine";
+import { validateSafeUrl } from "./server/security.js";
 
 async function startServer() {
   const app = express();
@@ -23,6 +24,7 @@ async function startServer() {
   app.post("/api/test-provider", async (req, res) => {
     const { providerId, model, apiKey, baseUrl } = req.body;
     try {
+      validateSafeUrl(baseUrl);
       const { executeUniversalRequest } = require("./server/orchestrator");
       const resp = await executeUniversalRequest({
         providerId,
@@ -43,7 +45,8 @@ async function startServer() {
     try {
       const { providerId, baseUrl, apiKey } = req.body;
       if (!providerId) return res.status(400).json({ error: "providerId is required" });
-      const { fetchProviderModels } = await import("./server/modelsFetcher");
+      validateSafeUrl(baseUrl);
+      const { fetchProviderModels } = await import("./server/modelsFetcher.js");
       const models = await fetchProviderModels(providerId, baseUrl, apiKey);
       res.json({ models });
     } catch (err: any) {
@@ -56,6 +59,7 @@ async function startServer() {
   app.post("/api/pull-model", async (req, res) => {
     try {
       const { modelName, baseUrl } = req.body;
+      validateSafeUrl(baseUrl);
       const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '') + "/api/pull";
       const resp = await fetch(ollamaUrl, {
         method: 'POST',
@@ -77,12 +81,17 @@ async function startServer() {
         return res.status(400).json({ error: "Content is required" });
       }
 
-      const providerOptions = req.headers['x-ai-provider'] ? {
-        providerId: req.headers['x-ai-provider'],
-        model: req.headers['x-ai-model'],
-        apiKey: req.headers['x-ai-apikey'],
-        baseUrl: req.headers['x-ai-baseurl']
-      } : undefined;
+      let providerOptions: any = undefined;
+      if (req.headers['x-ai-provider']) {
+        const baseUrl = req.headers['x-ai-baseurl'] as string | undefined;
+        validateSafeUrl(baseUrl);
+        providerOptions = {
+          providerId: req.headers['x-ai-provider'],
+          model: req.headers['x-ai-model'],
+          apiKey: req.headers['x-ai-apikey'],
+          baseUrl
+        };
+      }
 
       const prompt = `Analyze the following note. Provide a concise title, a brief summary (max 2 sentences), an array of 1 to 4 highly relevant category tags (like 'Idea', 'Task', 'Personal', 'Work', 'Finance', 'Meeting', etc.), and a hex color code that fits the vibe.
 
@@ -145,12 +154,17 @@ ${content}
         return res.status(400).json({ error: "Array of notes is required" });
       }
 
-      const providerOptions = req.headers['x-ai-provider'] ? {
-        providerId: req.headers['x-ai-provider'],
-        model: req.headers['x-ai-model'],
-        apiKey: req.headers['x-ai-apikey'],
-        baseUrl: req.headers['x-ai-baseurl']
-      } : undefined;
+      let providerOptions: any = undefined;
+      if (req.headers['x-ai-provider']) {
+        const baseUrl = req.headers['x-ai-baseurl'] as string | undefined;
+        validateSafeUrl(baseUrl);
+        providerOptions = {
+          providerId: req.headers['x-ai-provider'],
+          model: req.headers['x-ai-model'],
+          apiKey: req.headers['x-ai-apikey'],
+          baseUrl
+        };
+      }
 
       const formattedNotesInput = notes.map((n, idx) => {
         return `--- Note Index: ${idx} ---
