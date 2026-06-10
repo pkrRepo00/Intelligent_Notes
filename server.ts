@@ -23,7 +23,7 @@ async function startServer() {
   app.post("/api/test-provider", async (req, res) => {
     const { providerId, model, apiKey, baseUrl } = req.body;
     try {
-      const { executeUniversalRequest } = require("./server/orchestrator");
+      const { executeUniversalRequest } = await import("./server/orchestrator");
       const resp = await executeUniversalRequest({
         providerId,
         model,

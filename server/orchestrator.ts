@@ -32,7 +32,36 @@ export interface OrchestrationResponse {
 }
 
 // Universal fetch adapter for OpenAI compatible APIs (OpenAI, Groq, DeepSeek, OpenRouter, Mistral, Local)
+export function validateProviderUrl(urlStr: string | undefined): void {
+  if (!urlStr) return;
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(urlStr);
+  } catch (err) {
+    throw new Error("Invalid URL format");
+  }
+
+  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+    throw new Error("Invalid protocol: only HTTP and HTTPS are allowed");
+  }
+
+  const hostname = parsedUrl.hostname;
+
+  // Block metadata endpoints
+  if (hostname === "169.254.169.254" || hostname === "metadata.google.internal") {
+    throw new Error("Access to internal metadata endpoints is forbidden");
+  }
+
+  // Block unauthorized loopback addresses (allowing Ollama default port)
+  const isLoopback = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname.startsWith("127.");
+  if (isLoopback && parsedUrl.port !== "11434") {
+    throw new Error("Access to unauthorized loopback addresses is forbidden");
+  }
+}
+
+// Universal fetch adapter for OpenAI compatible APIs (OpenAI, Groq, DeepSeek, OpenRouter, Mistral, Local)
 export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<OrchestrationResponse> {
+  validateProviderUrl(req.baseUrl);
   const url = req.baseUrl || "https://api.openai.com/v1/chat/completions";
   const body: any = {
     model: req.model,
