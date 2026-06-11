@@ -32,7 +32,10 @@ export interface OrchestrationResponse {
 }
 
 // Universal fetch adapter for OpenAI compatible APIs (OpenAI, Groq, DeepSeek, OpenRouter, Mistral, Local)
+import { validateSafeUrl } from "./security";
+
 export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<OrchestrationResponse> {
+  if (req.baseUrl) validateSafeUrl(req.baseUrl);
   const url = req.baseUrl || "https://api.openai.com/v1/chat/completions";
   const body: any = {
     model: req.model,

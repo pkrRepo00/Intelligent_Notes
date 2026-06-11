@@ -10,8 +10,12 @@ export interface NormalizedModel {
   quantization?: string;
 }
 
+import { validateSafeUrl } from "./security";
+
 export async function fetchProviderModels(providerId: string, baseUrl?: string, apiKey?: string): Promise<NormalizedModel[]> {
   try {
+    if (baseUrl) validateSafeUrl(baseUrl);
+
     if (providerId === 'gemini') {
       const key = apiKey || process.env.GEMINI_API_KEY || "";
       const url = `https://generativelanguage.googleapis.com/v1beta/models?key=\${key}`;
