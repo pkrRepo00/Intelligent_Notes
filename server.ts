@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import mammoth from "mammoth";
 import { AIEngine, Priority } from "./server/aiEngine";
+import { validateSafeUrl } from "./server/security.js";
 
 async function startServer() {
   const app = express();
@@ -23,6 +24,7 @@ async function startServer() {
   app.post("/api/test-provider", async (req, res) => {
     const { providerId, model, apiKey, baseUrl } = req.body;
     try {
+      if (baseUrl) validateSafeUrl(baseUrl);
       const { executeUniversalRequest } = require("./server/orchestrator");
       const resp = await executeUniversalRequest({
         providerId,
@@ -43,6 +45,7 @@ async function startServer() {
     try {
       const { providerId, baseUrl, apiKey } = req.body;
       if (!providerId) return res.status(400).json({ error: "providerId is required" });
+      if (baseUrl) validateSafeUrl(baseUrl);
       const { fetchProviderModels } = await import("./server/modelsFetcher");
       const models = await fetchProviderModels(providerId, baseUrl, apiKey);
       res.json({ models });
@@ -56,7 +59,9 @@ async function startServer() {
   app.post("/api/pull-model", async (req, res) => {
     try {
       const { modelName, baseUrl } = req.body;
-      const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '') + "/api/pull";
+      const ollamaBaseUrl = baseUrl || "http://127.0.0.1:11434";
+      validateSafeUrl(ollamaBaseUrl);
+      const ollamaUrl = ollamaBaseUrl.replace(/[\/]v1.*/g, '') + "/api/pull";
       const resp = await fetch(ollamaUrl, {
         method: 'POST',
         headers: { "Content-Type": "application/json" },
@@ -75,6 +80,10 @@ async function startServer() {
       const { content } = req.body;
       if (!content || typeof content !== "string") {
         return res.status(400).json({ error: "Content is required" });
+      }
+
+      if (req.headers['x-ai-baseurl']) {
+        validateSafeUrl(req.headers['x-ai-baseurl'] as string);
       }
 
       const providerOptions = req.headers['x-ai-provider'] ? {
@@ -143,6 +152,10 @@ ${content}
       const { notes } = req.body;
       if (!Array.isArray(notes) || notes.length === 0) {
         return res.status(400).json({ error: "Array of notes is required" });
+      }
+
+      if (req.headers['x-ai-baseurl']) {
+        validateSafeUrl(req.headers['x-ai-baseurl'] as string);
       }
 
       const providerOptions = req.headers['x-ai-provider'] ? {
