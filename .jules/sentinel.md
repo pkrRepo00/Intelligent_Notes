@@ -1,0 +1,4 @@
+## 2024-05-24 - Prevent SSRF in AI Gateway
+**Vulnerability:** The AI Gateway components (`server.ts`, `server/orchestrator.ts`, `server/modelsFetcher.ts`) directly accepted user-provided `baseUrl` strings and utilized them in `fetch` calls. This allowed a malicious user to supply an arbitrary URL, potentially probing internal endpoints (e.g., AWS/Google Cloud metadata endpoints or internal database services) from the context of the server application, causing a Server-Side Request Forgery (SSRF) vulnerability.
+**Learning:** This existed because custom URLs for various AI models needed to be supported dynamically without explicit allowlisting logic.
+**Prevention:** Always sanitize and validate user-supplied URLs before usage. For AI Gateways, ensure that the URLs resolve to valid external APIs (using the established `validateSafeUrl` utility), explicitly blocking access to `169.254.169.254` or metadata domains, .
