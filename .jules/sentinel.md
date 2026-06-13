@@ -1,0 +1,4 @@
+## 2024-03-24 - SSRF Protection on AI Gateway Base URLs
+**Vulnerability:** The Express backend accepts user-provided `baseUrl` strings via API endpoints (`/api/pull-model`, `/api/provider-models`, etc.) and passes them directly to `fetch()` calls.
+**Learning:** This exposes a Server-Side Request Forgery (SSRF) vector where attackers could pass cloud metadata IPs (like `169.254.169.254`) as the `baseUrl` to probe or extract instance credentials. Validating only the string hostname is insufficient because of DNS rebinding and custom domains pointing to internal IPs.
+**Prevention:** Implemented an asynchronous `validateSafeUrl` function in `server/security.ts` that enforces HTTP/HTTPS, explicitly denies known metadata IPs, and uses `node:dns` `lookup` to resolve hostnames dynamically and prevent DNS bypasses, while explicitly allowing `localhost` for legitimate local models.
