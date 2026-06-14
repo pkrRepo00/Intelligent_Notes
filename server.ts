@@ -1,3 +1,4 @@
+import { validateSafeUrl } from "./server/security.js";
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
@@ -56,7 +57,8 @@ async function startServer() {
   app.post("/api/pull-model", async (req, res) => {
     try {
       const { modelName, baseUrl } = req.body;
-      const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '') + "/api/pull";
+      let safeBaseUrl = await validateSafeUrl(baseUrl);
+      const ollamaUrl = (safeBaseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '') + "/api/pull";
       const resp = await fetch(ollamaUrl, {
         method: 'POST',
         headers: { "Content-Type": "application/json" },
