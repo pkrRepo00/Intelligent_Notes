@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { validateSafeUrl } from "./security.js";
 
 export interface NormalizedModel {
   id: string;
@@ -14,7 +15,8 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
   try {
     if (providerId === 'gemini') {
       const key = apiKey || process.env.GEMINI_API_KEY || "";
-      const url = `https://generativelanguage.googleapis.com/v1beta/models?key=\${key}`;
+      const rawUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=\${key}`;
+      const url = await validateSafeUrl(rawUrl);
       const res = await fetch(url);
       if (!res.ok) throw new Error("Gemini list models failed: " + res.status);
       const data = await res.json();
@@ -27,7 +29,8 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
     }
 
     if (providerId === 'ollama') {
-      const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '').replace(/[\/]api[\/]tags.*/g, '') + "/api/tags";
+      const rawOllamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '').replace(/[\/]api[\/]tags.*/g, '') + "/api/tags";
+      const ollamaUrl = await validateSafeUrl(rawOllamaUrl);
       const res = await fetch(ollamaUrl);
       if (!res.ok) throw new Error(`Ollama API Error: \${res.status}`);
       const data = await res.json();
@@ -55,7 +58,9 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
     
     let path = "/models";
 
-    const res = await fetch(openaiBase + path, {
+    const finalUrl = await validateSafeUrl(openaiBase + path);
+
+    const res = await fetch(finalUrl, {
       headers: {
         "Authorization": `Bearer \${apiKey}`,
         "Content-Type": "application/json"
