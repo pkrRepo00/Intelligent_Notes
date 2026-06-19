@@ -1,0 +1,4 @@
+## 2025-02-28 - Add SSRF Mitigation for AI Custom Provider URLs
+**Vulnerability:** The server was fetching external AI provider URLs defined by arbitrary client inputs (`baseUrl` and `ollamaUrl`) directly using `fetch` without validating the host. This opened the server up to Server-Side Request Forgery (SSRF), particularly allowing requests to local cloud metadata IPs (e.g. `169.254.169.254`) and DNS rebinding attacks via HTTP 302 redirects.
+**Learning:** `fetch` automatically follows redirects, and external input needs explicit sanitization to block local metadata endpoints while still allowing `127.0.0.1` for local AI server use cases.
+**Prevention:** Always validate user-provided URLs in external requests and use `redirect: "error"` or `redirect: "manual"` in Node.js `fetch` options to prevent attackers from using 302 redirects to bypass initial host validation.
