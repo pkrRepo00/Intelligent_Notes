@@ -61,10 +61,14 @@ export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<
     headers["X-Title"] = "AI Studio Build";
   }
 
+  const { validateSafeUrl } = await import("./security.js");
+  validateSafeUrl(url);
+
   const response = await fetch(url, {
     method: "POST",
     headers,
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    redirect: "error"
   });
 
   if (!response.ok) {
@@ -101,6 +105,9 @@ export async function fetchAnthropic(req: OrchestrationRequest): Promise<Orchest
     body.system = req.systemPrompt;
   }
 
+  const { validateSafeUrl } = await import("./security.js");
+  validateSafeUrl(url);
+
   const response = await fetch(url, {
     method: "POST",
     headers: {
@@ -108,7 +115,8 @@ export async function fetchAnthropic(req: OrchestrationRequest): Promise<Orchest
       "x-api-key": req.apiKey,
       "anthropic-version": "2023-06-01"
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    redirect: "error"
   });
 
   if (!response.ok) {
