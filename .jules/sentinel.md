@@ -1,0 +1,5 @@
+## 2025-02-23 - Critical SSRF in AI Gateway Base URLs
+
+**Vulnerability:** The AI gateway accepted unvalidated custom `baseUrl` strings and passed them directly to node `fetch()`. This exposed the application to Server-Side Request Forgery (SSRF), allowing an attacker to request internal network resources, most critically cloud metadata endpoints (like `169.254.169.254`).
+**Learning:** Because the app is designed to support local AI models (Ollama, LM Studio), developers naturally assumed that custom URLs (including localhost) should be permitted without restriction. However, the lack of validation on the backend created an exploitable surface where malicious URLs could be supplied instead of legitimate AI server URLs.
+**Prevention:** Always validate and sanitize user-provided URLs before fetching them. Crucially, explicitly block access to known internal metadata IP ranges (`169.254.x.x`), resolve DNS to prevent TOCTOU DNS rebinding bypasses, and disable HTTP redirects (`redirect: 'error'`) on the fetch call so attackers cannot use a remote server to redirect the backend fetch to an internal IP.
