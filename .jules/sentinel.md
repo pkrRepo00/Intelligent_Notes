@@ -1,0 +1,4 @@
+## 2024-06-23 - SSRF Vulnerability via Unvalidated Custom API URLs
+**Vulnerability:** Server-Side Request Forgery (SSRF) risk found in AI provider integrations (`baseUrl`) due to lack of protocol validation and internal metadata blocking.
+**Learning:** `fetch` defaults to accepting any valid URL structure. Allowing user-supplied base URLs without validation permits requests to internal metadata services (e.g. `169.254.169.254`). Furthermore, `fetch` follows redirects by default, allowing bypasses of initial string-based validation.
+**Prevention:** Always parse custom URLs (e.g., via `new URL()`), explicitly enforce `http:`/`https:` protocols, and implement an explicit blocklist for cloud provider metadata endpoints while permitting necessary local development addresses (e.g., `127.0.0.1`, `localhost`). Crucially, always set `redirect: 'error'` or `redirect: 'manual'` in custom `fetch` configuration to prevent bypass via HTTP 302 Open Redirects.
