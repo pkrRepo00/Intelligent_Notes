@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { validateSafeUrl } from "./security";
 
 export interface NormalizedModel {
   id: string;
@@ -14,8 +15,8 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
   try {
     if (providerId === 'gemini') {
       const key = apiKey || process.env.GEMINI_API_KEY || "";
-      const url = `https://generativelanguage.googleapis.com/v1beta/models?key=\${key}`;
-      const res = await fetch(url);
+      const url = validateSafeUrl(`https://generativelanguage.googleapis.com/v1beta/models?key=\${key}`);
+      const res = await fetch(url, { redirect: "error" });
       if (!res.ok) throw new Error("Gemini list models failed: " + res.status);
       const data = await res.json();
       return (data.models || []).map((m: any) => ({
@@ -27,8 +28,8 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
     }
 
     if (providerId === 'ollama') {
-      const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '').replace(/[\/]api[\/]tags.*/g, '') + "/api/tags";
-      const res = await fetch(ollamaUrl);
+      const ollamaUrl = validateSafeUrl((baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '').replace(/[\/]api[\/]tags.*/g, '') + "/api/tags");
+      const res = await fetch(ollamaUrl, { redirect: "error" });
       if (!res.ok) throw new Error(`Ollama API Error: \${res.status}`);
       const data = await res.json();
       return (data.models || []).map((m: any) => ({
@@ -54,12 +55,14 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
     if (openaiBase.endsWith('/chat/completions')) openaiBase = openaiBase.replace('/chat/completions', '');
     
     let path = "/models";
+    const openAiUrl = validateSafeUrl(openaiBase + path);
 
-    const res = await fetch(openaiBase + path, {
+    const res = await fetch(openAiUrl, {
       headers: {
         "Authorization": `Bearer \${apiKey}`,
         "Content-Type": "application/json"
-      }
+      },
+      redirect: "error"
     });
 
     if (!res.ok) throw new Error(`\${providerId} list models failed: \${res.status} \${await res.text()}`);

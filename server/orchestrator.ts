@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { validateSafeUrl } from "./security";
 
 export interface AIProvider {
   id: string;
@@ -33,7 +34,7 @@ export interface OrchestrationResponse {
 
 // Universal fetch adapter for OpenAI compatible APIs (OpenAI, Groq, DeepSeek, OpenRouter, Mistral, Local)
 export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<OrchestrationResponse> {
-  const url = req.baseUrl || "https://api.openai.com/v1/chat/completions";
+  const url = validateSafeUrl(req.baseUrl || "https://api.openai.com/v1/chat/completions");
   const body: any = {
     model: req.model,
     messages: [],
@@ -64,7 +65,8 @@ export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<
   const response = await fetch(url, {
     method: "POST",
     headers,
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    redirect: "error"
   });
 
   if (!response.ok) {
@@ -89,7 +91,7 @@ export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<
 
 // Anthropic Adapter
 export async function fetchAnthropic(req: OrchestrationRequest): Promise<OrchestrationResponse> {
-  const url = "https://api.anthropic.com/v1/messages";
+  const url = validateSafeUrl("https://api.anthropic.com/v1/messages");
   const body: any = {
     model: req.model,
     max_tokens: req.maxTokens || 4096,
@@ -108,7 +110,8 @@ export async function fetchAnthropic(req: OrchestrationRequest): Promise<Orchest
       "x-api-key": req.apiKey,
       "anthropic-version": "2023-06-01"
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    redirect: "error"
   });
 
   if (!response.ok) {
