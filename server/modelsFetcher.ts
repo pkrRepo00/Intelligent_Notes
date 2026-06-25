@@ -10,6 +10,8 @@ export interface NormalizedModel {
   quantization?: string;
 }
 
+import { validateSafeUrl } from './security';
+
 export async function fetchProviderModels(providerId: string, baseUrl?: string, apiKey?: string): Promise<NormalizedModel[]> {
   try {
     if (providerId === 'gemini') {
@@ -27,8 +29,16 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
     }
 
     if (providerId === 'ollama') {
-      const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '').replace(/[\/]api[\/]tags.*/g, '') + "/api/tags";
-      const res = await fetch(ollamaUrl);
+      let ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '').replace(/[\/]api[\/]tags.*/g, '') + "/api/tags";
+
+      if (baseUrl) {
+        const safeResult = await validateSafeUrl(ollamaUrl);
+        if (safeResult) {
+          ollamaUrl = safeResult;
+        }
+      }
+
+      const res = await fetch(ollamaUrl, { redirect: 'error' });
       if (!res.ok) throw new Error(`Ollama API Error: \${res.status}`);
       const data = await res.json();
       return (data.models || []).map((m: any) => ({
@@ -54,12 +64,22 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
     if (openaiBase.endsWith('/chat/completions')) openaiBase = openaiBase.replace('/chat/completions', '');
     
     let path = "/models";
+    let url = openaiBase + path;
+    const headers: any = {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    };
 
-    const res = await fetch(openaiBase + path, {
-      headers: {
-        "Authorization": `Bearer \${apiKey}`,
-        "Content-Type": "application/json"
-      }
+    if (baseUrl) {
+       const safeResult = await validateSafeUrl(url);
+       if (safeResult) {
+         url = safeResult;
+       }
+    }
+
+    const res = await fetch(url, {
+      headers,
+      redirect: 'error'
     });
 
     if (!res.ok) throw new Error(`\${providerId} list models failed: \${res.status} \${await res.text()}`);
