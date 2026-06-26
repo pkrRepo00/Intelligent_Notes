@@ -1,0 +1,4 @@
+## 2025-03-09 - Server-Side Request Forgery (SSRF) Vulnerability
+**Vulnerability:** The AI Gateway orchestrator (`server/orchestrator.ts`), model fetcher (`server/modelsFetcher.ts`), and local server (`server.ts`) allowed requests to custom, user-provided URLs (`baseUrl`) without validating the hostname or protocol. This enabled SSRF attacks against internal network endpoints.
+**Learning:** External fetch calls dynamically using user-provided URLs inherently risk exposing internal metadata endpoints, such as `169.254.169.254` on AWS, which attackers could exploit to read instance metadata and secrets.
+**Prevention:** Always validate user-provided URLs by strictly permitting HTTP/HTTPS protocols and actively blocking requests resolving to private IP ranges (using `dns.lookup`) before invoking `fetch`.
