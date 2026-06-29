@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { secureFetch } from './security';
 
 export interface NormalizedModel {
   id: string;
@@ -15,9 +16,9 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
     if (providerId === 'gemini') {
       const key = apiKey || process.env.GEMINI_API_KEY || "";
       const url = `https://generativelanguage.googleapis.com/v1beta/models?key=\${key}`;
-      const res = await fetch(url);
+      const res = await secureFetch(url);
       if (!res.ok) throw new Error("Gemini list models failed: " + res.status);
-      const data = await res.json();
+      const data = (await res.json()) as any;
       return (data.models || []).map((m: any) => ({
         id: m.name.replace('models/', ''),
         name: m.displayName || m.name,
@@ -28,9 +29,9 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
 
     if (providerId === 'ollama') {
       const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '').replace(/[\/]api[\/]tags.*/g, '') + "/api/tags";
-      const res = await fetch(ollamaUrl);
+      const res = await secureFetch(ollamaUrl);
       if (!res.ok) throw new Error(`Ollama API Error: \${res.status}`);
-      const data = await res.json();
+      const data = (await res.json()) as any;
       return (data.models || []).map((m: any) => ({
         id: m.name,
         name: m.name,
@@ -55,7 +56,7 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
     
     let path = "/models";
 
-    const res = await fetch(openaiBase + path, {
+    const res = await secureFetch(openaiBase + path, {
       headers: {
         "Authorization": `Bearer \${apiKey}`,
         "Content-Type": "application/json"
@@ -63,7 +64,7 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
     });
 
     if (!res.ok) throw new Error(`\${providerId} list models failed: \${res.status} \${await res.text()}`);
-    const data = await res.json();
+    const data = (await res.json()) as any;
     return (data.data || []).map((m: any) => ({
       id: m.id,
       name: m.name || m.id,
