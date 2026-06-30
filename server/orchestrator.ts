@@ -1,4 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
+import { fetch } from "undici";
+import { safeAgent, validateSafeUrl } from "./security.js";
 
 export interface AIProvider {
   id: string;
@@ -61,10 +63,14 @@ export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<
     headers["X-Title"] = "AI Studio Build";
   }
 
-  const response = await fetch(url, {
+  const safeUrl = validateSafeUrl(url);
+
+  const response = await fetch(safeUrl, {
     method: "POST",
     headers,
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    dispatcher: safeAgent,
+    redirect: "manual",
   });
 
   if (!response.ok) {
@@ -72,7 +78,7 @@ export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<
     throw new Error(`[${req.providerId}] API Error ${response.status}: ${err}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as any;
   const text = data.choices && data.choices[0] && data.choices[0].message.content;
 
   return {
@@ -101,14 +107,18 @@ export async function fetchAnthropic(req: OrchestrationRequest): Promise<Orchest
     body.system = req.systemPrompt;
   }
 
-  const response = await fetch(url, {
+  const safeUrl = validateSafeUrl(url);
+
+  const response = await fetch(safeUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "x-api-key": req.apiKey,
       "anthropic-version": "2023-06-01"
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    dispatcher: safeAgent,
+    redirect: "manual",
   });
 
   if (!response.ok) {
@@ -116,7 +126,7 @@ export async function fetchAnthropic(req: OrchestrationRequest): Promise<Orchest
     throw new Error(`[anthropic] API Error ${response.status}: ${err}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as any;
   const text = data.content?.[0]?.text || "";
 
   return {
