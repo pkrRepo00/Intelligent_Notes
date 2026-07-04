@@ -1,0 +1,4 @@
+## 2024-05-24 - SSRF via TOCTOU in AI Gateway
+**Vulnerability:** Server-Side Request Forgery (SSRF) bypass through DNS rebinding in `fetchOpenAICompatible` using node's native `fetch`.
+**Learning:** Checking the URL string is insufficient against SSRF because the IP address could change between the check and the actual fetch (TOCTOU). Node's native `fetch` doesn't provide a way to customize the DNS lookup or access the resolved IP to mitigate this.
+**Prevention:** Use an HTTP client like `undici` with a custom `Agent` and a custom `lookup` function that intercepts the DNS resolution phase to validate the actual IP address being connected to, preventing DNS rebinding. Additionally, validate direct IPs locally, and enforce `redirect: 'manual'` or `redirect: 'error'` to prevent redirect-based SSRF.
