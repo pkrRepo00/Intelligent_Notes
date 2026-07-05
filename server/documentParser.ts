@@ -1,4 +1,4 @@
-import mammoth from 'mammoth';
+import * as mammoth from 'mammoth';
 import * as pdfParseModule from 'pdf-parse';
 
 // Handle CJS/ESM interop for pdf-parse

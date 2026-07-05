@@ -1,4 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
+import { fetch } from "undici";
+import { safeAgent, localSafeAgent, validateSafeUrl } from "./security";
 
 export interface NormalizedModel {
   id: string;
@@ -15,9 +17,9 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
     if (providerId === 'gemini') {
       const key = apiKey || process.env.GEMINI_API_KEY || "";
       const url = `https://generativelanguage.googleapis.com/v1beta/models?key=\${key}`;
-      const res = await fetch(url);
+      const res = await fetch(url, { dispatcher: safeAgent, redirect: "error" });
       if (!res.ok) throw new Error("Gemini list models failed: " + res.status);
-      const data = await res.json();
+      const data = await res.json() as any;
       return (data.models || []).map((m: any) => ({
         id: m.name.replace('models/', ''),
         name: m.displayName || m.name,
@@ -28,9 +30,10 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
 
     if (providerId === 'ollama') {
       const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '').replace(/[\/]api[\/]tags.*/g, '') + "/api/tags";
-      const res = await fetch(ollamaUrl);
+      if (baseUrl && !validateSafeUrl(baseUrl, true)) throw new Error("SSRF blocked: Invalid or unsafe baseUrl");
+      const res = await fetch(ollamaUrl, { dispatcher: localSafeAgent, redirect: "error" });
       if (!res.ok) throw new Error(`Ollama API Error: \${res.status}`);
-      const data = await res.json();
+      const data = await res.json() as any;
       return (data.models || []).map((m: any) => ({
         id: m.name,
         name: m.name,
@@ -50,7 +53,9 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
     }
 
     // OpenAI Compatible
+    const isLocalProvider = providerId === 'custom' || providerId === 'local' || providerId === 'ollama';
     let openaiBase = baseUrl || "https://api.openai.com/v1";
+    if (baseUrl && !validateSafeUrl(baseUrl, isLocalProvider)) throw new Error("SSRF blocked: Invalid or unsafe baseUrl");
     if (openaiBase.endsWith('/chat/completions')) openaiBase = openaiBase.replace('/chat/completions', '');
     
     let path = "/models";
@@ -59,11 +64,13 @@ export async function fetchProviderModels(providerId: string, baseUrl?: string, 
       headers: {
         "Authorization": `Bearer \${apiKey}`,
         "Content-Type": "application/json"
-      }
+      },
+      dispatcher: isLocalProvider ? localSafeAgent : safeAgent,
+      redirect: "error"
     });
 
     if (!res.ok) throw new Error(`\${providerId} list models failed: \${res.status} \${await res.text()}`);
-    const data = await res.json();
+    const data = await res.json() as any;
     return (data.data || []).map((m: any) => ({
       id: m.id,
       name: m.name || m.id,
