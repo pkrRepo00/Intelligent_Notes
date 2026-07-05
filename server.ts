@@ -4,6 +4,8 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import mammoth from "mammoth";
 import { AIEngine, Priority } from "./server/aiEngine";
+import { fetch } from "undici";
+import { safeAgent, localSafeAgent, validateSafeUrl } from "./server/security";
 
 async function startServer() {
   const app = express();
@@ -57,10 +59,15 @@ async function startServer() {
     try {
       const { modelName, baseUrl } = req.body;
       const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '') + "/api/pull";
+      if (baseUrl && !validateSafeUrl(baseUrl, true)) {
+        throw new Error("SSRF blocked: Invalid or unsafe baseUrl");
+      }
       const resp = await fetch(ollamaUrl, {
         method: 'POST',
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: modelName, stream: false })
+        body: JSON.stringify({ name: modelName, stream: false }),
+        dispatcher: localSafeAgent,
+        redirect: "error"
       });
       if (!resp.ok) throw new Error("Ollama pull failed");
       res.json({ success: true });

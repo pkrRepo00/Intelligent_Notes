@@ -1,4 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
+import { fetch } from "undici";
+import { safeAgent, localSafeAgent, validateSafeUrl } from "./security";
 
 export interface AIProvider {
   id: string;
@@ -34,6 +36,12 @@ export interface OrchestrationResponse {
 // Universal fetch adapter for OpenAI compatible APIs (OpenAI, Groq, DeepSeek, OpenRouter, Mistral, Local)
 export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<OrchestrationResponse> {
   const url = req.baseUrl || "https://api.openai.com/v1/chat/completions";
+  const isLocalProvider = req.providerId === 'ollama' || req.providerId === 'custom' || req.providerId === 'local';
+
+  if (req.baseUrl && !validateSafeUrl(req.baseUrl, isLocalProvider)) {
+    throw new Error(`[${req.providerId}] SSRF blocked: Invalid or unsafe baseUrl`);
+  }
+
   const body: any = {
     model: req.model,
     messages: [],
@@ -64,7 +72,9 @@ export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<
   const response = await fetch(url, {
     method: "POST",
     headers,
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    dispatcher: isLocalProvider ? localSafeAgent : safeAgent,
+    redirect: "error"
   });
 
   if (!response.ok) {
@@ -72,7 +82,7 @@ export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<
     throw new Error(`[${req.providerId}] API Error ${response.status}: ${err}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as any;
   const text = data.choices && data.choices[0] && data.choices[0].message.content;
 
   return {
@@ -90,6 +100,7 @@ export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<
 // Anthropic Adapter
 export async function fetchAnthropic(req: OrchestrationRequest): Promise<OrchestrationResponse> {
   const url = "https://api.anthropic.com/v1/messages";
+
   const body: any = {
     model: req.model,
     max_tokens: req.maxTokens || 4096,
@@ -108,7 +119,9 @@ export async function fetchAnthropic(req: OrchestrationRequest): Promise<Orchest
       "x-api-key": req.apiKey,
       "anthropic-version": "2023-06-01"
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    dispatcher: safeAgent,
+    redirect: "error"
   });
 
   if (!response.ok) {
@@ -116,7 +129,7 @@ export async function fetchAnthropic(req: OrchestrationRequest): Promise<Orchest
     throw new Error(`[anthropic] API Error ${response.status}: ${err}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as any;
   const text = data.content?.[0]?.text || "";
 
   return {
