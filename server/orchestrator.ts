@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { safeFetch } from "./security.js";
 
 export interface AIProvider {
   id: string;
@@ -61,7 +62,7 @@ export async function fetchOpenAICompatible(req: OrchestrationRequest): Promise<
     headers["X-Title"] = "AI Studio Build";
   }
 
-  const response = await fetch(url, {
+  const response = await safeFetch(url, {
     method: "POST",
     headers,
     body: JSON.stringify(body)
@@ -101,7 +102,7 @@ export async function fetchAnthropic(req: OrchestrationRequest): Promise<Orchest
     body.system = req.systemPrompt;
   }
 
-  const response = await fetch(url, {
+  const response = await safeFetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import mammoth from "mammoth";
 import { AIEngine, Priority } from "./server/aiEngine";
+import { safeFetch } from "./server/security.js";
 
 async function startServer() {
   const app = express();
@@ -57,10 +58,11 @@ async function startServer() {
     try {
       const { modelName, baseUrl } = req.body;
       const ollamaUrl = (baseUrl || "http://127.0.0.1:11434").replace(/[\/]v1.*/g, '') + "/api/pull";
-      const resp = await fetch(ollamaUrl, {
+      const resp = await safeFetch(ollamaUrl, {
         method: 'POST',
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: modelName, stream: false })
+        body: JSON.stringify({ name: modelName, stream: false }),
+        allowLocal: true
       });
       if (!resp.ok) throw new Error("Ollama pull failed");
       res.json({ success: true });
